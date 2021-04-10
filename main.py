@@ -250,10 +250,10 @@ class EEGDataset(Dataset):
         return len(self.Y)
 
     def __getitem__(self, i):
-        return (self.X[i], self.Y[i])
+        return (self.X[i],self.Y[i])
 
 
-def load_data(dataset, batch_size=100):
+def load_data(dataset, batch_size=64):
     """
     Return a DataLoader instance basing on a Dataset instance, with batch_size specified.
     Note that since the data has already been shuffled, we set shuffle=False
@@ -270,15 +270,19 @@ def train_model(model, train_loader, n_epoch=5, lr=0.003, device=None):
     device = device or torch.device('cpu')
     model.train()
     loss_history = []
-    criterion = nn.CrossEntropyLoss()
+    lossFunc = nn.CrossEntropyLoss()
+    # lossFunc = nn.MSELoss
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     for epoch in range(n_epoch):
         curr_epoch_loss = []
-        for X, Y in train_loader:
+        for X, B in train_loader:
             optimizer.zero_grad()
-            Y_hat = model(X)
-            loss = criterion(Y_hat, Y)
+            #X = torch.cuda.FloatTensor(X)
+            Y_hat = model(X).float()
+            #Y_hat = torch.tensor(np.array([np.argmax(s) for s in Y_hat])).float()
+            B = B.long()
+            loss = lossFunc(Y_hat, B)
             loss.backward()
             optimizer.step()
             curr_epoch_loss.append(loss.cpu().data.numpy())
@@ -304,21 +308,41 @@ def eval_model(model, dataloader, device=None):
 
     return pred_all, Y_test
 
+#############
 
-train_loader = load_data(EEGDataset(getBatch(5, output_dirnew)))
+import torch
+import sys
+# print('__Python VERSION:', sys.version)
+# print('__pyTorch VERSION:', torch.__version__)
+# print('__CUDA VERSION', )
+# from subprocess import call
+# # call(["nvcc", "--version"]) does not work
+# print('__CUDNN VERSION:', torch.backends.cudnn.version())
+# print('__Number CUDA Devices:', torch.cuda.device_count())
+# print('__Devices')
+# # call(["nvidia-smi", "--format=csv", "--query-gpu=index,name,driver_version,memory.total,memory.used,memory.free"])
+# print('Active CUDA Device: GPU', torch.cuda.current_device())
+# print ('Available devices ', torch.cuda.device_count())
+# print ('Current cuda device ', torch.cuda.current_device())
+###############
+train_loader = load_data(EEGDataset(getBatch(1, output_dirnew)))
 for a, b in train_loader:
     print(a.shape)
 
-
-device = torch.device('cpu')
+print(torch.cuda.is_available())
+if torch.cuda.is_available():
+  dev = "cuda:0"
+else:
+  dev = "cpu"
+device = torch.device("cpu")
 n_epoch = 4
 lr = 0.003
 
-n_dim=1
+n_dim=6
 
 
 model = MintNet(n_dim)
 model = model.to(device)
 
 model, loss_history = train_model(model, train_loader, n_epoch=n_epoch, lr=lr, device=device)
-# pred, truth = eval_model(model, test_loader, device=device)
+#pred, truth = eval_model(model, test_loader, device=device)
