@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class MintNet(nn.Module):
-    def __init__(self, n_channels=1, n=6):
+    def __init__(self, n=6):
         """
         TODO : documents
         """
@@ -44,10 +44,10 @@ class MintNet(nn.Module):
 
         self.fc = nn.Linear(in_features=3200, out_features=6)
 
-    def forward(self, input):
-        input = input.permute(0,2,1)
-        #input = input.unsqueeze(dim=-1).permute(0,2,1)
-        print(input.shape)
+    def forward(self, input, dev):
+        input = input.permute(0,2,1).to(dev)
+        #input = input.unsqueeze(dim=-1).permute(0,2,1).to(dev)
+        #print(input.shape)
         x = self.conv_1(input)
         x = F.relu(x)
         x = self.pool_1(x)
@@ -72,11 +72,8 @@ class MintNet(nn.Module):
         '''
         TODO some reshaping required
         '''
-        print('---->1',out_hat.shape)
+
         out = out_hat.unsqueeze(dim=-1)
-        print('---->2',out.shape)
-        # print(type(out))
-        # out = torch.tensor(out)
         out, hidden = self.lstm_1(out)
         out = self.droput_1(out)
         out, hidden = self.lstm_2(out)

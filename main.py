@@ -11,7 +11,6 @@ from mne.io import read_raw_edf
 from torch.utils.data import TensorDataset
 
 import dhedfreader
-
 # Label values
 from MintNet import MintNet
 
@@ -251,9 +250,10 @@ class EEGDataset(Dataset):
 
     def __getitem__(self, i):
         return (self.X[i],self.Y[i])
+        #return (self.X[i][:,0],self.Y[i])
 
 
-def load_data(dataset, batch_size=64):
+def load_data(dataset, batch_size=32):
     """
     Return a DataLoader instance basing on a Dataset instance, with batch_size specified.
     Note that since the data has already been shuffled, we set shuffle=False
@@ -276,18 +276,28 @@ def train_model(model, train_loader, n_epoch=5, lr=0.003, device=None):
 
     for epoch in range(n_epoch):
         curr_epoch_loss = []
-        for X, B in train_loader:
+        accuracy = MeanMeasure()
+        for X, Y in train_loader:
             optimizer.zero_grad()
-            #X = torch.cuda.FloatTensor(X)
-            Y_hat = model(X).float()
-            #Y_hat = torch.tensor(np.array([np.argmax(s) for s in Y_hat])).float()
-            B = B.long()
-            loss = lossFunc(Y_hat, B)
+            X = X.to(device)
+            Y = Y.to(device)
+            Y_hat = model(X, device).float()
+            Y = Y.long()
+            loss = lossFunc(Y_hat, Y)
             loss.backward()
             optimizer.step()
             curr_epoch_loss.append(loss.cpu().data.numpy())
+            batch_acc = calculate_batch_accuracy(Y_hat, Y)
+            accuracy.update(batch_acc, Y.size(0))
         print(f"epoch{epoch}: curr_epoch_loss={np.mean(curr_epoch_loss)}")
         loss_history += curr_epoch_loss
+        print(datetime.now().strftime("%Y-%m-%d %H:%M"), "batch_acc->", accuracy.average)
+
+
+        ## Evaluating on every epoch
+        #pred, truth = eval_model(model, test_loader, device=device)
+        #auroc, f1 = evaluate_predictions(truth, pred)
+        #print(f"AUROC={auroc} and F1={f1}")
     return model, loss_history
 
 
@@ -295,23 +305,65 @@ def eval_model(model, dataloader, device=None):
     """
     Comments goes here
     """
-    device = device or torch.device('cpu')
+    #device = device or torch.device('cpu')
     model.eval()
     pred_all = []
     Y_test = []
-    for (X, K_beat, K_rhythm, K_freq), Y in dataloader:
-        Y_hat, _ = model(X, K_beat, K_rhythm, K_freq)
-        pred_all.append(Y_hat.detach().numpy())
-        Y_test.append(Y.detach().numpy())
+    for X, Y in dataloader:
+        X = X.to(device)
+        Y = Y.to(device)
+        Y_hat = model(X, device).float()
+        pred_all.append(Y_hat.cpu().detach().numpy())
+        Y_test.append(Y.cpu().detach().numpy())
     pred_all = np.concatenate(pred_all, axis=0)
     Y_test = np.concatenate(Y_test, axis=0)
 
     return pred_all, Y_test
 
-#############
+def evaluate_predictions(truth, pred):
+    """
+    TODO: Evaluate the performance of the predictoin via AUROC, and F1 score
 
-import torch
-import sys
+    each prediction in pred is a vector representing [p_0, p_1].
+    When defining the scores we are interesed in detecting class 1 only
+    (Hint: use roc_auc_score and f1_score from sklearn.metrics)
+    return: auroc, f1
+    """
+    from sklearn.metrics import roc_auc_score, f1_score
+
+    pred = np.argmax(pred, axis=1)
+    auroc = roc_auc_score(truth, pred, multi_class='ovo')
+    f1 = f1_score(truth, pred)
+
+    return auroc, f1
+
+def calculate_batch_accuracy(output, target):
+    with torch.no_grad():
+
+        batch_size = target.size(0)
+        _, pred = output.max(1)
+        correct = pred.eq(target).sum()
+
+        return correct * 100.0 / batch_size
+
+class MeanMeasure(object):
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.itemValue = 0
+        self.average = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, itemValue, n=1):
+        self.itemValue = itemValue
+        self.sum += itemValue * n
+        self.count += n
+        self.average = self.sum / self.count
+
+##############
+
 # print('__Python VERSION:', sys.version)
 # print('__pyTorch VERSION:', torch.__version__)
 # print('__CUDA VERSION', )
@@ -325,24 +377,36 @@ import sys
 # print ('Available devices ', torch.cuda.device_count())
 # print ('Current cuda device ', torch.cuda.current_device())
 ###############
-train_loader = load_data(EEGDataset(getBatch(1, output_dirnew)))
-for a, b in train_loader:
-    print(a.shape)
+def main():
+    train_loader = load_data(EEGDataset(getBatch(100, output_dirnew)))
+    test_loader = load_data(EEGDataset(getBatch(1, output_dirnew)))
+    # for a, b in train_loader:
+    #     print(a.shape)
 
-print(torch.cuda.is_available())
-if torch.cuda.is_available():
-  dev = "cuda:0"
-else:
-  dev = "cpu"
-device = torch.device("cpu")
-n_epoch = 4
-lr = 0.003
+    print(torch.cuda.is_available())
+    if torch.cuda.is_available():
+      dev = "cuda:0"
+      torch.cuda.empty_cache()
+    else:
+      dev = "cpu"
+    device = torch.device(dev)
+    print(datetime.now().strftime("%Y-%m-%d %H:%M"))
+    n_epoch = 50
+    lr = .03#0.003
 
-n_dim=6
+    n_dim=6#number of channels
 
 
-model = MintNet(n_dim)
-model = model.to(device)
+    model = MintNet(n_dim)
+    model = model.to(device)
 
-model, loss_history = train_model(model, train_loader, n_epoch=n_epoch, lr=lr, device=device)
-#pred, truth = eval_model(model, test_loader, device=device)
+    model, loss_history = train_model(model, train_loader, n_epoch=n_epoch, lr=lr, device=device)
+    pred, truth = eval_model(model, test_loader, device=device)
+    #auroc, f1 = evaluate_predictions(truth, pred)
+    #print(f"AUROC={auroc} and F1={f1}")
+
+    print(datetime.now().strftime("%Y-%m-%d %H:%M"))
+
+
+if __name__ == '__main__':
+    main()
