@@ -42,7 +42,7 @@ class MintNet(nn.Module):
         Fully Connected
         '''
 
-        self.fc = nn.Linear(in_features=3200, out_features=6)
+        self.fc = nn.Linear(in_features=3200, out_features=5)
 
     def forward(self, input, dev):
         input = input.permute(0,2,1).to(dev)

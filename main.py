@@ -54,43 +54,25 @@ EPOCH_SEC_SIZE = 30
 # data_dir="/Users/pradeep/Desktop/mcs/cs598DLhealthcare/project/sleep-edf-database-expanded-1.0.0/sleep-cassette/"
 data_dir = "C:/Users/omesha/Documents/Illinois/sleepdata/Sleep-Stage-Classification-master/Sleep-Stage-Classification-master/physionet-sleep-data"
 # output_dir="/Users/pradeep/Desktop/mcs/cs598DLhealthcare/project/EEGFPzCz/"
-output_dir = data_dir + "/out"
+output_dir = data_dir + "/out/"
 psg_fnames = glob.glob(os.path.join(data_dir, "*PSG.edf"))
 ann_fnames = glob.glob(os.path.join(data_dir, "*Hypnogram.edf"))
 psg_fnames.sort()
 ann_fnames.sort()
 psg_fnames = np.asarray(psg_fnames)
 ann_fnames = np.asarray(ann_fnames)
-##['EEG Fpz-Cz', 'EEG Pz-Oz', 'EOG horizontal', 'Resp oro-nasal', 'EMG submental', 'Temp rectal', 'Event marker']
-select_ch = 'EEG Fpz-Cz'
-
-
-##Below is working code corrected
-
-def getBatch(number_of_subj, output_dir):
-    npz_files = sorted(glob.glob(os.path.join(output_dir, "*.npz")))
-    X_data = []
-    Y_data = []
-    for fn in npz_files[:number_of_subj]:
-        samples = np.load(fn)
-        X_data.extend(samples['x'])
-        Y_data.extend(samples['y'])
-    return (X_data, Y_data)
-
-
-print("++++++++++++++")
-
-##['EEG Fpz-Cz', 'EEG Pz-Oz', 'EOG horizontal', 'Resp oro-nasal', 'EMG submental', 'Temp rectal', 'Event marker']
+fcount=0;
 select_ch = ['EEG Fpz-Cz', 'EEG Pz-Oz', 'EOG horizontal', 'Resp oro-nasal', 'EMG submental', 'Temp rectal']
-# output_dirnew="/Users/pradeep/Desktop/mcs/cs598DLhealthcare/project/EEGFPzCz/test/"
-output_dirnew = data_dir + "/out/test"
-#####Multichannel code
+###Multichannel code
 for i in range(len(psg_fnames)):
-    if not "SC4001E0-PSG.edf" in psg_fnames[i]:
-        continue
-    # existfileorNot = ntpath.basename(psg_fnames[i]).replace("-PSG.edf", ".npz")
-    # if(os.path.exists(os.path.join(output_dirnew, existfileorNot))):
-    #     continue
+    fileCount = {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+    }
 
     raw = read_raw_edf(psg_fnames[i], preload=True, stim_channel=None)
     sampling_rate = raw.info['sfreq']
@@ -199,34 +181,26 @@ for i in range(len(psg_fnames)):
     if end_idx >= len(y): end_idx = len(y) - 1
     select_idx = np.arange(start_idx, end_idx + 1)
     print(("Data before selection: {}, {}".format(x.shape, y.shape)))
-    x = x[select_idx]
-    y = y[select_idx]
-    print(("Data after selection: {}, {}".format(x.shape, y.shape)))
-
-    # Save
-    filename = ntpath.basename(psg_fnames[i]).replace("-PSG.edf", ".npz")
-    save_dict = {
-        "x": x,
-        "y": y,
-        "fs": sampling_rate,
-        "ch_label": select_ch,
-        "header_raw": h_raw,
-        "header_annotation": h_ann,
-    }
-    np.savez(os.path.join(output_dirnew, filename), **save_dict)
-
+    for a in select_idx:
+        #print(y[a])
+        fileCount[str(y[a])]=fileCount.get(str(y[a]),0)+1
+        filename = str(fileCount[str(y[a])])+".npz"
+        save_dict = {
+            "x": x[a],
+            "y": y[a],
+            "fs": sampling_rate,
+            "ch_label": select_ch,
+            "header_raw": h_raw,
+            "header_annotation": h_ann,
+        }
+        directory=output_dir+str(fcount)+"/"+str(y[a])+"/"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        np.savez(os.path.join(directory, filename), **save_dict)
+    fcount += 1
+    if fcount == 5:
+        break;
     print("\n=======================================\n")
-
-
-def getBatch(number_of_subj, output_dirnew):
-    npz_files = sorted(glob.glob(os.path.join(output_dirnew, "*.npz")))
-    X_data = []
-    Y_data = []
-    for fn in npz_files[:number_of_subj]:
-        samples = np.load(fn)
-        X_data.extend(samples['x'])
-        Y_data.extend(samples['y'])
-    return (X_data, Y_data)
 
 
 from torch.utils.data import Dataset
@@ -234,31 +208,54 @@ from torch.utils.data import Dataset
 
 class EEGDataset(Dataset):
 
-    def __init__(self, a):
+    def __init__(self, data_root,sample_size,no_of_channels):
         """
         TODO: init the Dataset instance.
         """
-        self.X = a[0]
-        self.Y = a[1]
+        self.data_root=data_root
+        self.sample_size=sample_size
+        self.no_of_channels=no_of_channels
+        self.dir=[]
+        for dir in os.listdir(self.data_root):
+            paths = []
+            for name in os.listdir(self.data_root+"/"+ dir):
+                paths.append(data_root + "/"+dir +"/"+name)
+            self.dir.append(paths)
+
 
     def __len__(self):
         """
         TODO: Denotes the total number of samples
         """
 
-        return len(self.Y)
+        return self.sample_size
 
     def __getitem__(self, i):
-        return (self.X[i],self.Y[i])
-        #return (self.X[i][:,0],self.Y[i])
+        import random
+        #print("before ",i)
+        i=i%(len(self.dir))
+        #print("before ", i)
+        data_size=len(self.dir[i])
+        batch_size=int(self.sample_size/data_size)
+        data=self.dir[i]
+        Y_data=[]
+        X_data = np.array([], dtype=np.float32).reshape(0, 3000, self.no_of_channels)
+        for a in data:
+            npz_files = sorted(glob.glob(os.path.join(a, "*.npz")))
+            npz_files1=random.sample(npz_files,batch_size)
+            label=os.path.basename(a)
+            for fn in npz_files1:
+                samples = np.load(fn)
+                X_data=np.vstack([X_data,samples['x'][np.newaxis,:,0:(self.no_of_channels)]])
+                Y_data.append(int(label))
+        return X_data, Y_data
 
 
-def load_data(dataset, batch_size=32):
+def load_data(dataset, batch_size=1):
     """
     Return a DataLoader instance basing on a Dataset instance, with batch_size specified.
     Note that since the data has already been shuffled, we set shuffle=False
     """
-
     return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
 
@@ -279,8 +276,8 @@ def train_model(model, train_loader, n_epoch=5, lr=0.003, device=None):
         accuracy = MeanMeasure()
         for X, Y in train_loader:
             optimizer.zero_grad()
-            X = X.to(device)
-            Y = Y.to(device)
+            X = X.squeeze(dim=0).to(device)
+            Y = torch.tensor(Y).to(device)
             Y_hat = model(X, device).float()
             Y = Y.long()
             loss = lossFunc(Y_hat, Y)
@@ -310,8 +307,8 @@ def eval_model(model, dataloader, device=None):
     pred_all = []
     Y_test = []
     for X, Y in dataloader:
-        X = X.to(device)
-        Y = Y.to(device)
+        X = X.squeeze(dim=0).to(device)
+        Y = torch.tensor(Y).to(device)
         Y_hat = model(X, device).float()
         pred_all.append(Y_hat.cpu().detach().numpy())
         Y_test.append(Y.cpu().detach().numpy())
@@ -378,8 +375,8 @@ class MeanMeasure(object):
 # print ('Current cuda device ', torch.cuda.current_device())
 ###############
 def main():
-    train_loader = load_data(EEGDataset(getBatch(100, output_dirnew)))
-    test_loader = load_data(EEGDataset(getBatch(1, output_dirnew)))
+    train_loader = load_data(EEGDataset(output_dir,35,3), batch_size=1)
+    test_loader =  load_data(EEGDataset(output_dir,35,3), batch_size=1)
     # for a, b in train_loader:
     #     print(a.shape)
 
@@ -394,7 +391,7 @@ def main():
     n_epoch = 50
     lr = .03#0.003
 
-    n_dim=6#number of channels
+    n_dim=3#number of channels
 
 
     model = MintNet(n_dim)
