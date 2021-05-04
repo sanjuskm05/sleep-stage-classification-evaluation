@@ -1,4 +1,4 @@
-# sleep-stage-classification-evaluation
+# MintNet – Automated sleep stage scoring using multi-channel EEG data
 
 Deep learning methods exhibit promising performance for predictive modeling in healthcare. Multiple researchers have applied different deep learning models for sleep stage scoring for patients and improve the accuracy close to that of human experts.
 We have implemented a Convolution Neural Network (CNN) based architecture which has 78% prediction accuracy with multi-channel sleep electroencephalogram (EEG) data. This result is very promising and can be extended by applying additional layers to the CNN and adding a Recurrent Neural Network to capture the temporal nature of the sleep data.
