@@ -15,7 +15,8 @@ Healthcare is an important subject in USA as USA spends a lot of money on health
 The idea is to create an automatic classifier which can take a patient’s sleep data recording and can classify into (Wake, N1, N2, N3, REM) states. For this problem we are planning to take the PhysioNet data set. It contains 197 whole-night Polysomnographic sleep recordings, containing EEG, EOG, chin EMG, and event markers. Some records also contain respiration and body temperature.
 Source : https://www.physionet.org/content/sleep-edfx/1.0.0/
 
-![image](https://user-images.githubusercontent.com/8688478/117451932-29788080-af11-11eb-9361-70f7e42ae720.png)
+![image](https://user-images.githubusercontent.com/8688478/117483914-630eb300-af34-11eb-9a22-7cf5643d0b56.png)
+
 
 ![image](https://user-images.githubusercontent.com/8688478/117451980-38f7c980-af11-11eb-8b70-10fd68770e43.png)
 
@@ -62,7 +63,7 @@ We have computed different sets of metrics during the training as well as during
 We have chosen F1-score which is a harmonic mean of precision and sensitivity. F1-score is a more comprehensive model performance measure than precision and sensitivity themselves as they cannot be improved at the same time.
 
 
-# EXPERIMENTAL RESULTS
+# Experimental Results
 
 We are trying to improve the accuracy by implementing two changes on the base model, 
 1. Combining data from fpz-cz and pz-oz for training & prediction and 
