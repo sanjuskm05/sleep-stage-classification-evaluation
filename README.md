@@ -52,6 +52,11 @@ We have implemented the preliminary model as in below figure as a CNN based on t
 The cost function used for training this model is Cross-Entropy loss which implicitly applies the softmax function on the signal. We started with a low learning rate of 0.0001 which is reduced progressively so that the model does not overfit.
 We have implemented the CNN architecture using the Python Library PyTorch 1.8.1.
 
+# MintNet
+
+![image](https://user-images.githubusercontent.com/8688478/117475423-03aba580-af2a-11eb-96d6-e495f5c7432c.png)
+
+
 # Metrics
 We have computed different sets of metrics during the training as well as during validation. During training, we have computed accuracy and the F1-score. During validation, we computed Cohen-Kappa, AUCROC, accuracy, and F1-score to measure the performance of the model.
 We have chosen F1-score which is a harmonic mean of precision and sensitivity. F1-score is a more comprehensive model performance measure than precision and sensitivity themselves as they cannot be improved at the same time.
