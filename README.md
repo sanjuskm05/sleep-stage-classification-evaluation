@@ -3,6 +3,23 @@
 Deep learning methods exhibit promising performance for predictive modeling in healthcare. Multiple researchers have applied different deep learning models for sleep stage scoring for patients and improve the accuracy close to that of human experts.
 We have implemented a Convolution Neural Network (CNN) based architecture which has 78% prediction accuracy with multi-channel sleep electroencephalogram (EEG) data. This result is very promising and can be extended by applying additional layers to the CNN.
 
+# Problem statement and motivation
+
+Healthcare is an important subject in USA as USA spends a lot of money on healthcare. With the advancement in hardware and cloud technologies Machine learning has become a reality. It is increasingly becoming popular in healthcare as it can be used to provide better care of patients by providing better treatment diagnosis. Among many topics in healthcare, Sleep is a very important and essential part in human life. Sleep is categorized in different stages as per American medical association (Wake, N1, N2, N3, REM).It is very important to accurately and automatically classify the sleep of an individual in these different stages due to below points:
+
+* To identify the sleep related conditions including and but not limited to fatigue, drowsiness , sleep disorders like apnea, insomnia , narcolepsy ,heart disorders.
+* Secondly manual sleep scoring is time consuming and prone to human errors.
+* Moreover, smart EEG machines can reduce the dependency on the expert technicians and thus saving their time
+* It can also help in creating of gadgets where people can themselves proactively monitor and even the further analysis can be sent directly to doctors
+
+The idea is to create an automatic classifier which can take a patient’s sleep data recording and can classify into (Wake, N1, N2, N3, REM) states. For this problem we are planning to take the PhysioNet data set. It contains 197 whole-night Polysomnographic sleep recordings, containing EEG, EOG, chin EMG, and event markers. Some records also contain respiration and body temperature.
+Source : https://www.physionet.org/content/sleep-edfx/1.0.0/
+
+![image](https://user-images.githubusercontent.com/8688478/117451932-29788080-af11-11eb-9361-70f7e42ae720.png)
+
+![image](https://user-images.githubusercontent.com/8688478/117451980-38f7c980-af11-11eb-8b70-10fd68770e43.png)
+
+
 # Data Description
 
 Physiological signals acquired during sleep, like electroencephalography (EEG), can be used to computationally determine sleep apnea, cardiovascular disorders, sleep stage annotations, etc. We can create an efficient sleep detector,
@@ -15,15 +32,15 @@ The data stored in PSG is in EDF format which is standard for the EEG and PSG si
 https://www.edfplus.info/specs/edfplus.html#PSGwithMSLT
 
 # Data Processing
-We must consider the below approaches while preprocessing the data before model development
-1. We must use the mne and the pyedflib python library to read the EDF files as it comes with their basic functionalities
-2. some of the data is missing i.e., for the first nights of subjects 36 and 52 and the second night for subject 13. We will have to take care of this while processing ad ignore that.
-3. Normalization of the data is also needed for mean zero and variance 1 which will help to eliminate the errors which we might have during the training process
-4. We will have to see the class imbalance problems as there will be many classes where the no of stages is more
-5. The dataset consists of sleep stages W, R, N1, N2, N3, N4, M (Movement time), and ‘?’ (not scored). So, for our work, we will try to remove M and ‘?’ data while processing the data.
-6. We have checked if the class labels are balanced in our dataset
+We considered the below approaches while preprocessing the data before model development
+1. Creating NPZ files by filtering above mentioned data by reading above channels for 30 seconds interval using EDF reader from deep sleepnet paper.
+2. Removing the incomplete data for the subject 13,26 and 52.
+3. Removing the Movement and :? where the data is not recorded properly
+4. Snapshot of the distribution of classes after data processing. 
+5. Data is split into 80:20 for training and validation with optimal batch size of 50 based on experimentation.
 
-![image](https://user-images.githubusercontent.com/8688478/117450628-7b200b80-af0f-11eb-8d41-48fbf90316b9.png)
+![image](https://user-images.githubusercontent.com/8688478/117451646-c25acc00-af10-11eb-852e-ce51b3dd5f5d.png)
+
 
 # CNN Architecture
 A convolutional neural network (CNN) is composed of multiple convolutional(filtering) and pooling (sub-sampling) layers with a form of non-linearity applied before or after pooling. These layers are often followed by one or more fully connected layers. In a multi-class classification application such as the sleep stage scoring the last layer of a CNN is often a softmax layer. The feature selection is done automatically using a CNN and then those features are fed to one/more linear layers for classification. The CNNs are trained using iterative optimization with the backpropagation algorithm. The optimization method used in this paper is stochastic gradient descent (SGD).
