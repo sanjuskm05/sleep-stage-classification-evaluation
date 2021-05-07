@@ -47,3 +47,6 @@ We are trying to improve the accuracy by implementing two changes on the base mo
 We have benchmarked our results by training the model using data from fpz-cz and pz-oz channels. We have also combined these two channels’ data to compute the evaluation metrics.
 
 
+# Licence
+* For academic and non-commercial use only
+* Apache License 2.0
