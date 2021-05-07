@@ -18,9 +18,6 @@ Source : https://www.physionet.org/content/sleep-edfx/1.0.0/
 ![image](https://user-images.githubusercontent.com/8688478/117483914-630eb300-af34-11eb-9a22-7cf5643d0b56.png)
 
 
-![image](https://user-images.githubusercontent.com/8688478/117451980-38f7c980-af11-11eb-8b70-10fd68770e43.png)
-
-
 # Data Description
 
 Physiological signals acquired during sleep, like electroencephalography (EEG), can be used to computationally determine sleep apnea, cardiovascular disorders, sleep stage annotations, etc. We can create an efficient sleep detector,
