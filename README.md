@@ -23,13 +23,14 @@ We must consider the below approaches while preprocessing the data before model 
 5. The dataset consists of sleep stages W, R, N1, N2, N3, N4, M (Movement time), and ‘?’ (not scored). So, for our work, we will try to remove M and ‘?’ data while processing the data.
 6. We have checked if the class labels are balanced in our dataset
 
-![image](https://user-images.githubusercontent.com/8688478/116949589-b5a85080-ac50-11eb-9c32-36951d78467a.png)
+![image](https://user-images.githubusercontent.com/8688478/117450628-7b200b80-af0f-11eb-8d41-48fbf90316b9.png)
 
 # CNN Architecture
 A convolutional neural network (CNN) is composed of multiple convolutional(filtering) and pooling (sub-sampling) layers with a form of non-linearity applied before or after pooling. These layers are often followed by one or more fully connected layers. In a multi-class classification application such as the sleep stage scoring the last layer of a CNN is often a softmax layer. The feature selection is done automatically using a CNN and then those features are fed to one/more linear layers for classification. The CNNs are trained using iterative optimization with the backpropagation algorithm. The optimization method used in this paper is stochastic gradient descent (SGD).
 We have implemented the preliminary model as in Fig.3 as a CNN based on the architecture suggested in the paper by O. Tsinalis et al. This model consists of 2 pairs of convolution and pooling layers followed by 2 fully connected layers. The signal enters as a 1-dimensional data which goes through 1-D convolution layer. The output then gets stacked and passed through a 2-D convolution layer. After every convolution operation non-linearity is applied through a rectified linear unit (ReLU) and downsampled using max-pooling. Post convolution operation the signals passes through 2 fully connected layers.
 
-![image](https://user-images.githubusercontent.com/8688478/116949679-facc8280-ac50-11eb-80e1-c2d7b7533eeb.png)
+![image](https://user-images.githubusercontent.com/8688478/117450725-9c80f780-af0f-11eb-95a6-286ce99b5a38.png)
+
 
 The cost function used for training this model is Cross-Entropy loss which implicitly applies the softmax function on the signal. We started with a low learning rate of 0.0001 which is reduced progressively so that the model does not overfit.
 We have implemented the CNN architecture using the Python Library PyTorch 1.8.1.
